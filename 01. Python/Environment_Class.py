@@ -48,15 +48,77 @@ class TwentyFortyEightEnvironment(Env):
         self.turn = 0
 
     def step(self, action):
+        # 1. Apply Action
+        action = self.action_space.sample()
+        if action == 0:
+            self.action_down()
+        elif action == 1:
+            self.action_left()
+        elif action == 2:
+            self.action_up()
+        elif action == 3:
+            self.action_right()
+
+        # 2. Generate new number
+        self.generate_new_number()
+
+        # 3. Check if done
+        done = self.check_if_done()
+
+        # 4. Update reward
         self.turn += 1
         reward = self.turn  # Reward = number of turns survived
+        self.state = self.observation_space
 
-        self.generate_new_number()
-        done = self.check_if_done()
+        # Set placeholder for info
+        info = {}
+
+        # Return step information
+        return self.state, reward, done, info
+
+    def action_up(self):
+        for row in range(1, len(self.observation_space.shape[0])):
+            for col in range(len(self.observation_space[1])):
+                if self.observation_space[row-1][col] == 0:
+                    self.observation_space[row-1][col] = self.observation_space[row][col]
+                    self.observation_space[row][col] = 0
+                elif self.observation_space[row-1][col] == self.observation_space[row][col]:
+                    self.observation_space[row-1][col] = self.observation_space[row-1][col] * 2
+                    self.observation_space[row][col] = 0
+
+    def action_left(self):
+        for col in range(1, len(self.observation_space.shape[1])):
+            for row in range(len(self.observation_space[0])):
+                if self.observation_space[row][col-1] == 0:
+                    self.observation_space[row][col-1] = self.observation_space[row][col]
+                    self.observation_space[row][col] = 0
+                elif self.observation_space[row][col-1] == self.observation_space[row][col]:
+                    self.observation_space[row][col-1] = self.observation_space[row][col-1] * 2
+                    self.observation_space[row][col] = 0
+
+    def action_right(self):
+        for col in range(len(self.observation_space.shape[1]-1, -1, -1)):
+            for row in range(len(self.observation_space[0])):
+                if self.observation_space[row][col+1] == 0:
+                    self.observation_space[row][col+1] = self.observation_space[row][col]
+                    self.observation_space[row][col] = 0
+                elif self.observation_space[row][col+1] == self.observation_space[row][col]:
+                    self.observation_space[row][col+1] = self.observation_space[row][col+1] * 2
+                    self.observation_space[row][col] = 0
+
+    def action_down(self):
+        for row in range(len(self.observation_space.shape[0]-1, -1, -1)):
+            for col in range(len(self.observation_space[1])):
+                if self.observation_space[row+1][col] == 0:
+                    self.observation_space[row+1][col] = self.observation_space[row][col]
+                    self.observation_space[row][col] = 0
+                elif self.observation_space[row+1][col] == self.observation_space[row][col]:
+                    self.observation_space[row+1][col] = self.observation_space[row+1][col] * 2
+                    self.observation_space[row][col] = 0
 
     def generate_new_number(self):
         """
-        Finds all empty cells in the matrix and fills on of them with either 2 or 4
+        Finds all empty cells in the matrix and fills one of them (randomly) with either 2 or 4
         """
         new_number = random.randrange(1, 3, 1) * 2
 
@@ -102,5 +164,9 @@ class TwentyFortyEightEnvironment(Env):
         pass
 
     def reset(self):
-        pass
-
+        self.state = np.array([[0, 0, 0, 0],
+                               [0, 0, 0, 0],
+                               [0, 0, 0, 0],
+                               [0, 0, 0, 0]])
+        self.turn = 0
+        return self.state
