@@ -49,7 +49,6 @@ class TwentyFortyEightEnvironment(Env):
 
     def step(self, action):
         # 1. Apply Action
-        action = self.action_space.sample()
         if action == 0:
             self.action_down()
         elif action == 1:
@@ -67,8 +66,8 @@ class TwentyFortyEightEnvironment(Env):
 
         # 4. Update reward
         self.turn += 1
-        reward = self.turn  # Reward = number of turns survived
-        self.state = self.observation_space
+        reward = max(self.state)  # Reward = number of turns survived
+        self.observation_space = self.state
 
         # Set placeholder for info
         info = {}
@@ -77,44 +76,52 @@ class TwentyFortyEightEnvironment(Env):
         return self.state, reward, done, info
 
     def action_up(self):
-        for row in range(1, len(self.observation_space.shape[0])):
-            for col in range(len(self.observation_space[1])):
-                if self.observation_space[row-1][col] == 0:
-                    self.observation_space[row-1][col] = self.observation_space[row][col]
-                    self.observation_space[row][col] = 0
-                elif self.observation_space[row-1][col] == self.observation_space[row][col]:
-                    self.observation_space[row-1][col] = self.observation_space[row-1][col] * 2
-                    self.observation_space[row][col] = 0
+        for col in range(self.state.shape[1]):
+            row = 3
+            while row-1 >= 0:
+                if self.state[row - 1][col] == 0:
+                    self.state[row - 1][col] = self.state[row][col]
+                    self.state[row][col] = 0
+                elif self.state[row - 1][col] == self.state[row][col]:
+                    self.state[row - 1][col] = self.state[row - 1][col] * 2
+                    self.state[row][col] = 0
+                row -= 1
 
     def action_left(self):
-        for col in range(1, len(self.observation_space.shape[1])):
-            for row in range(len(self.observation_space[0])):
-                if self.observation_space[row][col-1] == 0:
-                    self.observation_space[row][col-1] = self.observation_space[row][col]
-                    self.observation_space[row][col] = 0
-                elif self.observation_space[row][col-1] == self.observation_space[row][col]:
-                    self.observation_space[row][col-1] = self.observation_space[row][col-1] * 2
-                    self.observation_space[row][col] = 0
+        for row in range(self.state.shape[0]):
+            col = 3
+            while col-1 >= 0:
+                if self.state[row][col-1] == 0:
+                    self.state[row][col-1] = self.state[row][col]
+                    self.state[row][col] = 0
+                elif self.state[row][col-1] == self.state[row][col]:
+                    self.state[row][col-1] = self.state[row][col-1] * 2
+                    self.state[row][col] = 0
+                col -= 1
 
     def action_right(self):
-        for col in range(len(self.observation_space.shape[1]-1, -1, -1)):
-            for row in range(len(self.observation_space[0])):
-                if self.observation_space[row][col+1] == 0:
-                    self.observation_space[row][col+1] = self.observation_space[row][col]
-                    self.observation_space[row][col] = 0
-                elif self.observation_space[row][col+1] == self.observation_space[row][col]:
-                    self.observation_space[row][col+1] = self.observation_space[row][col+1] * 2
-                    self.observation_space[row][col] = 0
+        for row in range(self.state.shape[0]):
+            col = 0
+            while col+1 <= 3:
+                if self.state[row][col + 1] == 0:
+                    self.state[row][col + 1] = self.state[row][col]
+                    self.state[row][col] = 0
+                elif self.state[row][col + 1] == self.state[row][col]:
+                    self.state[row][col + 1] = self.state[row][col + 1] * 2
+                    self.state[row][col] = 0
+                col += 1
 
     def action_down(self):
-        for row in range(len(self.observation_space.shape[0]-1, -1, -1)):
-            for col in range(len(self.observation_space[1])):
-                if self.observation_space[row+1][col] == 0:
-                    self.observation_space[row+1][col] = self.observation_space[row][col]
-                    self.observation_space[row][col] = 0
-                elif self.observation_space[row+1][col] == self.observation_space[row][col]:
-                    self.observation_space[row+1][col] = self.observation_space[row+1][col] * 2
-                    self.observation_space[row][col] = 0
+        for col in range(self.state.shape[1]):
+            row = 0
+            while row+1 <= 3:
+                if self.state[row + 1][col] == 0:
+                    self.state[row + 1][col] = self.state[row][col]
+                    self.state[row][col] = 0
+                elif self.state[row + 1][col] == self.state[row][col]:
+                    self.state[row + 1][col] = self.state[row + 1][col] * 2
+                    self.state[row][col] = 0
+                row += 1
 
     def generate_new_number(self):
         """
@@ -123,45 +130,46 @@ class TwentyFortyEightEnvironment(Env):
         new_number = random.randrange(1, 3, 1) * 2
 
         empty_positions = []
-        for row in range(len(self.observation_space.shape[0])):
-            for col in range(len(self.observation_space[1])):
-                if self.observation_space[row][col] == 0:
+        for row in range(self.state.shape[0]):
+            for col in range(self.state.shape[1]):
+                if self.state[row][col] == 0:
                     empty_positions.append([row, col])
 
-        position = empty_positions[random.randrange(0, len(empty_positions) + 1, 1)]
+        if len(empty_positions) > 0:
+            position = empty_positions[random.randrange(0, len(empty_positions), 1)]
+            self.state[position[0]][position[1]] = new_number
+        else:
+            pass
 
-        self.observation_space[position[0]][position[1]] = new_number
-
-    def check_if_done(self):
+    def check_if_done(self, done = True):
         """
         Check if there's any available move to continue playing
         :return: done: bool
         """
-        done = True
-        for row in range(len(self.observation_space.shape[0])):
-            for col in range(len(self.observation_space[1])):
+        for row in range(self.state.shape[0]):
+            for col in range(self.state.shape[1]):
 
                 # If theres an empty cell, the game is not over
-                if self.observation_space[row][col] == 0:
+                if self.state[row][col] == 0:
                     done = False
 
                 if row > 0:
-                    if self.observation_space[row][col] == self.observation_space[row - 1][col]:
+                    if self.state[row][col] == self.state[row - 1][col]:
                         done = False
-                if row < self.observation_space.shape[0]:
-                    if self.observation_space[row][col] == self.observation_space[row + 1][col]:
+                if row < self.state.shape[0]-1:
+                    if self.state[row][col] == self.state[row + 1][col]:
                         done = False
                 if col > 0:
-                    if self.observation_space[row][col] == self.observation_space[row][col - 1]:
+                    if self.state[row][col] == self.state[row][col - 1]:
                         done = False
-                if col < self.observation_space.shape[1]:
-                    if self.observation_space[row][col] == self.observation_space[row][col + 1]:
+                if col < self.state.shape[1]-1:
+                    if self.state[row][col] == self.state[row][col + 1]:
                         done = False
 
         return done
 
     def render(self, mode='human'):
-        pass
+        print(self.state)
 
     def reset(self):
         self.state = np.array([[0, 0, 0, 0],
@@ -169,4 +177,5 @@ class TwentyFortyEightEnvironment(Env):
                                [0, 0, 0, 0],
                                [0, 0, 0, 0]])
         self.turn = 0
+        self.generate_new_number()
         return self.state
