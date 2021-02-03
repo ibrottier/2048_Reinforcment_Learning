@@ -39,7 +39,7 @@ def test_env(env, episodes = 1, render_every_step = True):
 def build_model(states, actions):
     model = Sequential()
     # model.add(Flatten(input_dim=states))
-    model.add(Dense(24, activation='relu', input_shape=states))
+    model.add(Dense(24, input_shape=states,  activation='relu'))
     model.add(Dense(24, activation='relu'))
     model.add(Dense(actions, activation='linear'))
     return model

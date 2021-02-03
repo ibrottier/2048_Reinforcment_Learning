@@ -58,15 +58,12 @@ class TwentyFortyEightEnvironment(Env):
         elif action == 3:
             self.action_right()
 
-        # 2. Generate new number
-        self.generate_new_number()
+        # 2. Generate new number and update reward
+        reward = self.generate_new_number() # Reward is 0 or 1, depending if a number was generated (survived a turn)
+        self.turn += 1
 
         # 3. Check if done
         done = self.check_if_done()
-
-        # 4. Update reward
-        self.turn += 1
-        reward = max(self.state)  # Reward = number of turns survived
         self.observation_space = self.state
 
         # Set placeholder for info
@@ -135,11 +132,14 @@ class TwentyFortyEightEnvironment(Env):
                 if self.state[row][col] == 0:
                     empty_positions.append([row, col])
 
+        generated_number = 0
         if len(empty_positions) > 0:
             position = empty_positions[random.randrange(0, len(empty_positions), 1)]
             self.state[position[0]][position[1]] = new_number
         else:
-            pass
+            generated_number = 1
+
+        return generated_number
 
     def check_if_done(self, done = True):
         """
