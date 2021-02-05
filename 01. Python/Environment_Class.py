@@ -132,12 +132,12 @@ class TwentyFortyEightEnvironment(Env):
                 if self.state[row][col] == 0:
                     empty_positions.append([row, col])
 
-        generated_number = 0
+        generated_number = 1
         if len(empty_positions) > 0:
             position = empty_positions[random.randrange(0, len(empty_positions), 1)]
             self.state[position[0]][position[1]] = new_number
         else:
-            generated_number = 1
+            generated_number = -1
 
         return generated_number
 
@@ -166,10 +166,15 @@ class TwentyFortyEightEnvironment(Env):
                     if self.state[row][col] == self.state[row][col + 1]:
                         done = False
 
+        if self.turn > 250:
+            done = True
         return done
 
     def render(self, mode='human'):
+        print('=============')
+        print(self.turn)
         print(self.state)
+        print('===========\n')
 
     def reset(self):
         self.state = np.array([[0, 0, 0, 0],

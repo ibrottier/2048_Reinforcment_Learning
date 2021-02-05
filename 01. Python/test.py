@@ -36,12 +36,13 @@ def test_env(env, episodes = 1, render_every_step = True):
         env.render()
 
 
-def build_model(states, actions):
+def build_model(env):
     model = Sequential()
     # model.add(Flatten(input_dim=states))
-    model.add(Dense(24, input_shape=states,  activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(actions, activation='linear'))
+    model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
+    # model.add(Dense(4, input_shape=(1, 4, 4),  activation='relu'))
+    model.add(Dense(4, activation='relu'))
+
     return model
 
 
@@ -59,9 +60,11 @@ env = TwentyFortyEightEnvironment()
 states = env.observation_space.shape
 actions = env.action_space.n
 
-model = build_model(states, actions)
+model = build_model(env)
 model.summary()
 
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
-dqn.fit(env, nb_steps=50000, visualize=False, verbose=1)
+dqn.fit(env, nb_steps=1000, visualize=False, verbose=1)
+aux = dqn.test(env, 1, visualize=True)
+print(aux)
