@@ -2,10 +2,12 @@ import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 from rl.agents import DQNAgent
 from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 from Environment_Class import TwentyFortyEightEnvironment
+import datetime
 
 
 def test_env(env, episodes = 1, render_every_step = True):
@@ -65,6 +67,8 @@ model.summary()
 
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
-dqn.fit(env, nb_steps=1000, visualize=False, verbose=1)
+log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+dqn.fit(env, nb_steps=100000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
 aux = dqn.test(env, 1, visualize=True)
 print(aux)
