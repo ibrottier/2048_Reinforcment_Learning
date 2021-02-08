@@ -65,6 +65,6 @@ model.summary()
 
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
-dqn.fit(env, nb_steps=1000, visualize=False, verbose=1)
+dqn.fit(env, nb_steps=5000, visualize=False, verbose=1)
 aux = dqn.test(env, 1, visualize=True)
 print(aux)
