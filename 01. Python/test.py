@@ -44,6 +44,7 @@ def build_model(env):
     model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
     # model.add(Dense(4, input_shape=(1, 4, 4),  activation='relu'))
     model.add(Dense(4, activation='relu'))
+    model.add(Dense(4, activation='relu'))
 
     return model
 
@@ -51,7 +52,7 @@ def build_model(env):
 def build_agent(model, actions):
     policy = BoltzmannQPolicy()
     memory = SequentialMemory(limit=50000, window_length=1)
-    dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=10,
+    dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=100,
                    target_model_update=1e-2)
     return dqn
 
@@ -69,6 +70,5 @@ dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-dqn.fit(env, nb_steps=100000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
-aux = dqn.test(env, 1, visualize=True)
-print(aux)
+dqn.fit(env, nb_steps=50000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
+aux = dqn.test(env, 15, visualize=False)
