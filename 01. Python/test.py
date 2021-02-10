@@ -43,7 +43,7 @@ def build_model(env):
     # model.add(Flatten(input_dim=states))
     model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
     # model.add(Dense(4, input_shape=(1, 4, 4),  activation='relu'))
-    model.add(Dense(4, activation='relu'))
+    #model.add(Dense(4, activation='relu'))
     model.add(Dense(4, activation='relu'))
 
     return model
@@ -51,7 +51,7 @@ def build_model(env):
 
 def build_agent(model, actions):
     policy = BoltzmannQPolicy()
-    memory = SequentialMemory(limit=50000, window_length=1)
+    memory = SequentialMemory(limit=500000, window_length=1)
     dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=100,
                    target_model_update=1e-2)
     return dqn
@@ -73,4 +73,4 @@ dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
 dqn.fit(env, nb_steps=50000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
-aux = dqn.test(env, 15, visualize=True)
+aux = dqn.test(env, 20, visualize=True)

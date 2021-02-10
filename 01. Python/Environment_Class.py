@@ -39,7 +39,8 @@ class TwentyFortyEightEnvironment(Env):
                            [999999, 999999, 999999, 999999],
                            [999999, 999999, 999999, 999999]]),
             shape=(4, 4),
-            dtype=int)
+            dtype=int
+        )
 
         # Starting State : Zero survived turns -> objective is to survive as many turns as possible
         self.state = np.array([[0, 0, 0, 0],
@@ -48,6 +49,7 @@ class TwentyFortyEightEnvironment(Env):
                                [0, 0, 0, 0]])
         self.turn = 0
         self.last_action = -1
+        self.last_failed_actions = 0
         self.info = {
             "D": 0,
             "L": 0,
@@ -79,6 +81,7 @@ class TwentyFortyEightEnvironment(Env):
             aux_new_number = self.generate_new_number()
             aux_actions = action
             if aux_new_number == -1:
+                self.last_failed_actions = 1
                 action = self.action_space.sample()
 
         # 3. Check if done
@@ -105,7 +108,10 @@ class TwentyFortyEightEnvironment(Env):
                 aux[row][col] = math.sqrt(aux[row][col])
         
         self.info["Max"] = max_aux
-        reward = sum(sum(aux)) + math.sqrt(max_aux)/2
+        #reward = sum(sum(aux)) + math.sqrt(max_aux)/2 * -self.last_failed_actions
+        reward = sum(sum(self.state)) + max_aux * -self.last_failed_actions
+        self.last_failed_actions = -1
+        # reward = max_aux
         return reward
 
     def _get_columns(self, reverse):
