@@ -60,6 +60,9 @@ def build_agent(model, actions):
 env = TwentyFortyEightEnvironment()
 # test_env(env)
 
+log_dir = "logs/scalars/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
+
 states = env.observation_space.shape
 actions = env.action_space.n
 
@@ -68,7 +71,6 @@ model.summary()
 
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
-log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+
 dqn.fit(env, nb_steps=50000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
 aux = dqn.test(env, 15, visualize=True)
