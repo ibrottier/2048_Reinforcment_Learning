@@ -16,6 +16,7 @@ from gym import Env
 from gym.spaces import Discrete, Box
 import numpy as np
 import random
+import math
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Open AI RL Environment Class
@@ -51,14 +52,16 @@ class TwentyFortyEightEnvironment(Env):
             "D": 0,
             "L": 0,
             "U": 0,
-            "R": 0
+            "R": 0,
+            "X": 0,
+            "Max": 0
         }
 
     def step(self, action):
         # 1. Apply Action
-        reward = -1
+        aux_new_number = -1
         aux_actions = -1
-        while reward == -1:     # Will do actions until making a valid one
+        while aux_new_number == -1:     # Will do actions until making a valid one
             if action == 0 and aux_actions != 0:
                 self.action_down()
                 self.info['D'] += 1
@@ -72,15 +75,18 @@ class TwentyFortyEightEnvironment(Env):
                 self.action_right()
                 self.info['R'] += 1
 
-            # 2. Generate new number and update reward
-            reward = self.generate_new_number() # Reward is -1 or 1, depending if a number was generated (survived a turn)
+            # 2. Generate new number
+            aux_new_number = self.generate_new_number()
             aux_actions = action
-            if reward == -1:
+            if aux_new_number == -1:
                 action = self.action_space.sample()
 
         # 3. Check if done
         done = self.check_if_done()
         self.observation_space = self.state
+        
+        # 4, Update Reward
+        reward = self._get_reward()
 
         # Set placeholder for info
         self.turn += 1
@@ -88,6 +94,19 @@ class TwentyFortyEightEnvironment(Env):
 
         # Return step information
         return self.state, reward, done, self.info
+
+    def _get_reward(self):
+        aux = self.state.copy()
+        max_aux = 0
+        for row in range(aux.shape[0]):
+            for col in range(aux.shape[1]):
+                if aux[row][col] > max_aux:
+                    max_aux = aux[row][col]
+                aux[row][col] = math.sqrt(aux[row][col])
+        
+        self.info["Max"] = max_aux
+        reward = sum(sum(aux)) + math.sqrt(max_aux)/2
+        return reward
 
     def _get_columns(self, reverse):
         col0 = np.array([0, 0, 0, 0])
@@ -254,6 +273,7 @@ class TwentyFortyEightEnvironment(Env):
             self.state[position[0]][position[1]] = new_number
         else:
             generated_number = -1
+            #self.info['X'] += 1
 
         return generated_number
 
