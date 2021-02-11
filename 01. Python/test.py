@@ -71,5 +71,5 @@ model.summary()
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
-dqn.fit(env, nb_steps=250000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
+dqn.fit(env, nb_steps=500000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
 aux = dqn.test(env, 20, visualize=True)

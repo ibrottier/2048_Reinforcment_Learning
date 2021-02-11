@@ -62,6 +62,10 @@ class TwentyFortyEightEnvironment(Env):
         valid_actions = self._get_available_movements()
         invalid_movement = False
 
+        if action not in valid_actions:     # Tried to apply an invalid movement
+            action = random.choice(valid_actions)
+            invalid_movement = True
+
         if action in valid_actions:
             if action == 0:
                 self.action_down()
@@ -78,9 +82,6 @@ class TwentyFortyEightEnvironment(Env):
 
             # 2. Generate new number
             self.generate_new_number()
-
-        else:   # Tried to apply an invalid movement
-            invalid_movement = True
 
         # 3. Check if done
         done = self.check_if_done()
