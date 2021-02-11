@@ -10,7 +10,7 @@ from Environment_Class import TwentyFortyEightEnvironment
 import datetime
 
 
-def test_env(env, episodes = 1, render_every_step = True):
+def test_env(env, episodes=1, render_every_step=True):
     for episode in range(1, episodes+1):
         state = env.reset()
         done = False
@@ -42,8 +42,7 @@ def build_model(env):
     model = Sequential()
     # model.add(Flatten(input_dim=states))
     model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-    # model.add(Dense(4, input_shape=(1, 4, 4),  activation='relu'))
-    #model.add(Dense(4, activation='relu'))
+    #model.add(Dense(8, activation='relu'))
     model.add(Dense(4, activation='relu'))
 
     return model
@@ -72,5 +71,5 @@ model.summary()
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
-dqn.fit(env, nb_steps=50000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
+dqn.fit(env, nb_steps=250000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
 aux = dqn.test(env, 20, visualize=True)

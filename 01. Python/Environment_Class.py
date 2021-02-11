@@ -49,47 +49,45 @@ class TwentyFortyEightEnvironment(Env):
                                [0, 0, 0, 0]])
         self.turn = 0
         self.last_action = -1
-        self.last_failed_actions = 0
         self.info = {
             "D": 0,
             "L": 0,
             "U": 0,
             "R": 0,
-            "X": 0,
-            "Max": 0
+            #'Max': 0
         }
 
     def step(self, action):
         # 1. Apply Action
-        aux_new_number = -1
-        aux_actions = -1
-        while aux_new_number == -1:     # Will do actions until making a valid one
-            if action == 0 and aux_actions != 0:
+        valid_actions = self._get_available_movements()
+        invalid_movement = False
+
+        if action in valid_actions:
+            if action == 0:
                 self.action_down()
                 self.info['D'] += 1
-            elif action == 1 and aux_actions != 1:
+            elif action == 1:
                 self.action_left()
                 self.info['L'] += 1
-            elif action == 2 and aux_actions != 2:
+            elif action == 2:
                 self.action_up()
                 self.info['U'] += 1
-            elif action == 3 and aux_actions != 3:
+            elif action == 3:
                 self.action_right()
                 self.info['R'] += 1
 
             # 2. Generate new number
-            aux_new_number = self.generate_new_number()
-            aux_actions = action
-            if aux_new_number == -1:
-                self.last_failed_actions = 1
-                action = self.action_space.sample()
+            self.generate_new_number()
+
+        else:   # Tried to apply an invalid movement
+            invalid_movement = True
 
         # 3. Check if done
         done = self.check_if_done()
         self.observation_space = self.state
         
         # 4, Update Reward
-        reward = self._get_reward()
+        reward = -999 if invalid_movement else self._get_reward()
 
         # Set placeholder for info
         self.turn += 1
@@ -98,7 +96,19 @@ class TwentyFortyEightEnvironment(Env):
         # Return step information
         return self.state, reward, done, self.info
 
-    def _get_reward(self):
+    def _get_available_movements(self):
+        valid_movements = []
+        if self.action_down(apply_action=False):
+            valid_movements.append(0)
+        if self.action_left(apply_action=False):
+            valid_movements.append(1)
+        if self.action_up(apply_action=False):
+            valid_movements.append(2)
+        if self.action_right(apply_action=False):
+            valid_movements.append(3)
+        return valid_movements
+
+    def _get_reward(self, option=0):
         aux = self.state.copy()
         max_aux = 0
         for row in range(aux.shape[0]):
@@ -107,11 +117,17 @@ class TwentyFortyEightEnvironment(Env):
                     max_aux = aux[row][col]
                 aux[row][col] = math.sqrt(aux[row][col])
         
-        self.info["Max"] = max_aux
-        #reward = sum(sum(aux)) + math.sqrt(max_aux)/2 * -self.last_failed_actions
-        reward = sum(sum(self.state)) + max_aux * -self.last_failed_actions
-        self.last_failed_actions = -1
-        # reward = max_aux
+        #self.info["Max"] = max_aux
+
+        if option == 0:
+            reward = sum(sum(aux)) + math.sqrt(max_aux)/2
+        elif option == 1:
+            reward = sum(sum(self.state)) + max_aux
+        elif option == 2:
+            reward = max_aux
+        else:
+            reward = 1
+
         return reward
 
     def _get_columns(self, reverse):
@@ -163,8 +179,9 @@ class TwentyFortyEightEnvironment(Env):
                 for col in range(0, len(row)):
                     self.state[row_index][col] = row[col]
 
-    def action_up(self):
+    def action_up(self, apply_action=True):
         cols = [self._get_columns(reverse=False)]
+
         cols_1 = [[x[x != 0] for x in col] for col in cols]    # Columns without 0s
         cols_0 = [[x[x == 0] for x in col] for col in cols]    # Columns of 0s
 
@@ -184,10 +201,23 @@ class TwentyFortyEightEnvironment(Env):
 
             new_cols.append(np.concatenate((col, col_0), axis=None))
 
-        self._reconstruct_board(new_columns=new_cols)
+        # is_valid_movement = not (set(cols) == set(new_cols))
+        is_valid_movement = False
+        for outer_index in range(len(cols[0])):
+            old = cols[0][outer_index]
+            new = new_cols[outer_index]
+            for inner_index in range(len(old)):
+                if old[inner_index] != new[inner_index]:
+                    is_valid_movement = True
 
-    def action_left(self):
+        if apply_action and is_valid_movement:
+            self._reconstruct_board(new_columns=new_cols)
+
+        return is_valid_movement
+
+    def action_left(self, apply_action=True):
         rows = [self._get_rows(reverse=False)]
+
         rows_1 = [[x[x != 0] for x in row] for row in rows]  # Rows without 0s
         rows_0 = [[x[x == 0] for x in row] for row in rows]  # Rows of 0s
 
@@ -207,10 +237,23 @@ class TwentyFortyEightEnvironment(Env):
 
             new_rows.append(np.concatenate((row, row_0), axis=None))
 
-        self._reconstruct_board(new_rows=new_rows)
+        # is_valid_movement = not (set(rows) == set(new_rows))
+        is_valid_movement = False
+        for outer_index in range(len(rows[0])):
+            old = rows[0][outer_index]
+            new = new_rows[outer_index]
+            for inner_index in range(len(old)):
+                if old[inner_index] != new[inner_index]:
+                    is_valid_movement = True
 
-    def action_right(self):
+        if apply_action and is_valid_movement:
+            self._reconstruct_board(new_rows=new_rows)
+
+        return is_valid_movement
+
+    def action_right(self, apply_action=True):
         rows = [self._get_rows(reverse=True)]
+
         rows_1 = [[x[x != 0] for x in row] for row in rows]  # Rows without 0s
         rows_0 = [[x[x == 0] for x in row] for row in rows]  # Rows of 0s
 
@@ -229,14 +272,27 @@ class TwentyFortyEightEnvironment(Env):
                         row[col] = 0
 
             new_rows.append(np.concatenate((row, row_0), axis=None))
+
+        # is_valid_movement = not (set(rows) == set(new_rows))
+        is_valid_movement = False
+        for outer_index in range(len(rows[0])):
+            old = rows[0][outer_index]
+            new = new_rows[outer_index]
+            for inner_index in range(len(old)):
+                if old[inner_index] != new[inner_index]:
+                    is_valid_movement = True
 
         for i in range(len(new_rows)):
             new_rows[i] = new_rows[i][::-1]
 
-        self._reconstruct_board(new_rows=new_rows)
+        if apply_action and is_valid_movement:
+            self._reconstruct_board(new_rows=new_rows)
 
-    def action_down(self):
+        return is_valid_movement
+
+    def action_down(self, apply_action=True):
         cols = [self._get_columns(reverse=True)]
+
         cols_1 = [[x[x != 0] for x in col] for col in cols]    # Columns without 0s
         cols_0 = [[x[x == 0] for x in col] for col in cols]    # Columns of 0s
 
@@ -256,10 +312,22 @@ class TwentyFortyEightEnvironment(Env):
 
             new_cols.append(np.concatenate((col, col_0), axis=None))
 
+        # is_valid_movement = not (set(cols) == set(new_cols))
+        is_valid_movement = False
+        for outer_index in range(len(cols[0])):
+            old = cols[0][outer_index]
+            new = new_cols[outer_index]
+            for inner_index in range(len(old)):
+                if old[inner_index] != new[inner_index]:
+                    is_valid_movement = True
+
         for i in range(len(new_cols)):
             new_cols[i] = new_cols[i][::-1]
 
-        self._reconstruct_board(new_columns=new_cols)
+        if apply_action and is_valid_movement:
+            self._reconstruct_board(new_columns=new_cols)
+
+        return is_valid_movement
 
     def generate_new_number(self):
         """
@@ -308,8 +376,6 @@ class TwentyFortyEightEnvironment(Env):
                     if self.state[row][col] == self.state[row][col + 1]:
                         done = False
 
-        if self.turn > 250:
-            done = True
         return done
 
     def render(self, mode='human'):
