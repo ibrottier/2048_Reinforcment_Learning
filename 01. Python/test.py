@@ -50,7 +50,7 @@ def build_model(env):
 
 def build_agent(model, actions):
     policy = BoltzmannQPolicy()
-    memory = SequentialMemory(limit=50000, window_length=1)
+    memory = SequentialMemory(limit=100000, window_length=1)
     dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=100,
                    target_model_update=1e-2)
     return dqn
@@ -71,5 +71,5 @@ model.summary()
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
-dqn.fit(env, nb_steps=50000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
-aux = dqn.test(env, 20, visualize=True)
+dqn.fit(env, nb_steps=100000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
+aux = dqn.test(env, 5, visualize=True)

@@ -34,10 +34,10 @@ class TwentyFortyEightEnvironment(Env):
                           [0, 0, 0, 0],
                           [0, 0, 0, 0],
                           [0, 0, 0, 0]]),
-            high=np.array([[999999, 999999, 999999, 999999],
-                           [999999, 999999, 999999, 999999],
-                           [999999, 999999, 999999, 999999],
-                           [999999, 999999, 999999, 999999]]),
+            high=np.array([[15, 15, 15, 15],
+                           [15, 15, 15, 15],
+                           [15, 15, 15, 15],
+                           [15, 15, 15, 15]]),
             shape=(4, 4),
             dtype=int
         )
@@ -87,10 +87,10 @@ class TwentyFortyEightEnvironment(Env):
 
         # 3. Check if done
         done = self.check_if_done()
-        self.observation_space = self.state
-        
+        self._get_observation()
+
         # 4, Update Reward
-        reward = -10 if invalid_movement else self._get_reward()
+        reward = -1000 if invalid_movement else self._get_reward()
 
         # Set placeholder for info
         self.turn += 1
@@ -98,6 +98,21 @@ class TwentyFortyEightEnvironment(Env):
 
         # Return step information
         return self.state, reward, done, self.info
+
+    def _get_observation(self):
+        aux = np.array([[0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0]])
+
+        for row in range(self.state.shape[0]):
+            for col in range(self.state.shape[1]):
+                if self.state[row][col] == 0:
+                    aux[row][col] = 0
+                else:
+                    aux[row][col] = np.log2(self.state[row][col])
+
+        self.observation_space = aux
 
     def _get_available_movements(self):
         valid_movements = []
@@ -111,7 +126,7 @@ class TwentyFortyEightEnvironment(Env):
             valid_movements.append(3)
         return valid_movements
 
-    def _get_reward(self, option=3):
+    def _get_reward(self, option=1):
         aux = self.state.copy()
         max_aux = 0
         for row in range(aux.shape[0]):
@@ -417,5 +432,7 @@ class TwentyFortyEightEnvironment(Env):
         }
         for i in range(1):
             self.generate_new_number()
+
+        self._get_observation()
 
         return self.state
