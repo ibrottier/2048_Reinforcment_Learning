@@ -43,11 +43,13 @@ class TwentyFortyEightEnvironment(Env):
         )
 
         # Starting State : Zero survived turns -> objective is to survive as many turns as possible
+
         self.state = np.array([[0, 0, 0, 0],
                                [0, 0, 0, 0],
                                [0, 0, 0, 0],
                                [0, 0, 0, 0]])
         self.turn = 0
+        self.new_value = 0
         self.last_action = -1
         self.info = {
             "D": 0,
@@ -65,7 +67,7 @@ class TwentyFortyEightEnvironment(Env):
         if action not in valid_actions:     # Tried to apply an invalid movement
             action = random.choice(valid_actions)
             invalid_movement = True
-
+        self.new_value = 0
         if action in valid_actions:
             if action == 0:
                 self.action_down()
@@ -88,7 +90,7 @@ class TwentyFortyEightEnvironment(Env):
         self.observation_space = self.state
         
         # 4, Update Reward
-        reward = -999 if invalid_movement else self._get_reward()
+        reward = -10 if invalid_movement else self._get_reward()
 
         # Set placeholder for info
         self.turn += 1
@@ -109,7 +111,7 @@ class TwentyFortyEightEnvironment(Env):
             valid_movements.append(3)
         return valid_movements
 
-    def _get_reward(self, option=0):
+    def _get_reward(self, option=3):
         aux = self.state.copy()
         max_aux = 0
         for row in range(aux.shape[0]):
@@ -126,6 +128,8 @@ class TwentyFortyEightEnvironment(Env):
             reward = sum(sum(self.state)) + max_aux
         elif option == 2:
             reward = max_aux
+        elif option == 3:
+            reward = self.new_value
         else:
             reward = 1
 
@@ -195,6 +199,7 @@ class TwentyFortyEightEnvironment(Env):
                 for row in range(0, len(col)):
                     if col[row] == col[row-1]:
                         col[row-1] = col[row-1]*2
+                        self.new_value += int(col[row-1])
                         col[row] = 0
                     if col[row-1] == 0:
                         col[row-1] = col[row]
@@ -231,6 +236,7 @@ class TwentyFortyEightEnvironment(Env):
                 for col in range(0, len(row)):
                     if row[col] == row[col - 1]:
                         row[col - 1] = row[col - 1] * 2
+                        self.new_value += int(row[col - 1])
                         row[col] = 0
                     if row[col - 1] == 0:
                         row[col - 1] = row[col]
@@ -267,6 +273,7 @@ class TwentyFortyEightEnvironment(Env):
                 for col in range(0, len(row)):
                     if row[col] == row[col - 1]:
                         row[col - 1] = row[col - 1] * 2
+                        self.new_value += int(row[col - 1])
                         row[col] = 0
                     if row[col - 1] == 0:
                         row[col - 1] = row[col]
@@ -306,6 +313,7 @@ class TwentyFortyEightEnvironment(Env):
                 for row in range(0, len(col)):
                     if col[row] == col[row-1]:
                         col[row-1] = col[row-1]*2
+                        self.new_value += int(col[row - 1])
                         col[row] = 0
                     if col[row-1] == 0:
                         col[row-1] = col[row]
