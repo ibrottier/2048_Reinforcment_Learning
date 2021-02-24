@@ -28,17 +28,11 @@ class TwentyFortyEightEnvironment(Env):
         # Action Space : Down, Left, Up, Right
         self.action_space = Discrete(4)
 
-        # Observation Space : 4x4 Matrix
+        # Observation Space : 16 channels x 4x4 Matrix
         self.observation_space = Box(
-            low=np.array([[0, 0, 0, 0],
-                          [0, 0, 0, 0],
-                          [0, 0, 0, 0],
-                          [0, 0, 0, 0]]),
-            high=np.array([[15, 15, 15, 15],
-                           [15, 15, 15, 15],
-                           [15, 15, 15, 15],
-                           [15, 15, 15, 15]]),
-            shape=(4, 4),
+            low=0,
+            high=1,
+            shape=( 4, 4, 15),
             dtype=int
         )
 
@@ -65,22 +59,22 @@ class TwentyFortyEightEnvironment(Env):
         invalid_movement = False
 
         if action not in valid_actions:     # Tried to apply an invalid movement
-            action = random.choice(valid_actions)
             invalid_movement = True
         self.new_value = 0
-        if action in valid_actions:
-            if action == 0:
-                self.action_down()
-                self.info['D'] += 1
-            elif action == 1:
-                self.action_left()
-                self.info['L'] += 1
-            elif action == 2:
-                self.action_up()
-                self.info['U'] += 1
-            elif action == 3:
-                self.action_right()
-                self.info['R'] += 1
+        if not invalid_movement:
+            if action in valid_actions:
+                if action == 0:
+                    self.action_down()
+                    self.info['D'] += 1
+                elif action == 1:
+                    self.action_left()
+                    self.info['L'] += 1
+                elif action == 2:
+                    self.action_up()
+                    self.info['U'] += 1
+                elif action == 3:
+                    self.action_right()
+                    self.info['R'] += 1
 
             # 2. Generate new number
             self.generate_new_number()
@@ -97,22 +91,38 @@ class TwentyFortyEightEnvironment(Env):
         self.last_action = action
 
         # Return step information
-        return self.state, reward, done, self.info
+        return self._get_observation(), reward, done, self.info
 
     def _get_observation(self):
-        aux = np.array([[0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0]])
+        observation = []
 
-        for row in range(self.state.shape[0]):
-            for col in range(self.state.shape[1]):
-                if self.state[row][col] == 0:
-                    aux[row][col] = 0
-                else:
-                    aux[row][col] = np.log2(self.state[row][col])
+        for row in self.state:
+            aux = []
+            for cell in row:
+                aux_ = []
+                for num in [0,
+                            2,
+                            4,
+                            8,
+                            16,
+                            32,
+                            64,
+                            128,
+                            256,
+                            512,
+                            1024,
+                            2048,
+                            4096,
+                            8192,
+                            16384]:
 
-        self.observation_space = aux
+                    aux_.append(1 if cell == num else 0)
+                aux.append(aux_.copy())
+                aux_.clear()
+            observation.append(aux.copy())
+            aux.clear()
+
+        return np.asarray(observation)
 
     def _get_available_movements(self):
         valid_movements = []
@@ -126,7 +136,7 @@ class TwentyFortyEightEnvironment(Env):
             valid_movements.append(3)
         return valid_movements
 
-    def _get_reward(self, option=1):
+    def _get_reward(self, option=3):
         aux = self.state.copy()
         max_aux = 0
         for row in range(aux.shape[0]):
@@ -134,8 +144,6 @@ class TwentyFortyEightEnvironment(Env):
                 if aux[row][col] > max_aux:
                     max_aux = aux[row][col]
                 aux[row][col] = math.sqrt(aux[row][col])
-        
-        #self.info["Max"] = max_aux
 
         if option == 0:
             reward = sum(sum(aux)) + math.sqrt(max_aux)/2
@@ -357,7 +365,8 @@ class TwentyFortyEightEnvironment(Env):
         """
         Finds all empty cells in the matrix and fills one of them (randomly) with either 2 or 4
         """
-        new_number = random.randrange(1, 3, 1) * 2
+        # new_number = random.randrange(1, 3, 1) * 2
+        new_number = 2
 
         empty_positions = []
         for row in range(self.state.shape[0]):
@@ -430,9 +439,8 @@ class TwentyFortyEightEnvironment(Env):
             "U": 0,
             "R": 0
         }
-        for i in range(1):
+        for i in range(2):
             self.generate_new_number()
 
-        self._get_observation()
+        return self._get_observation()
 
-        return self.state

@@ -1,9 +1,9 @@
 import numpy as np
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPool3D
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
-from rl.agents import DQNAgent
+from rl.agents import CEMAgent
 from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 from Environment_Class import TwentyFortyEightEnvironment
@@ -40,10 +40,13 @@ def test_env(env, episodes=1, render_every_step=True):
 
 def build_model(env):
     model = Sequential()
+    model.add(Conv2D(input_shape= (1,) + env.observation_space.shape, kernel_size=(2, 2), filters=4*15, activation='tanh'))
+    model.add(MaxPool3D(pool_size=(1, 3, 3)))
     # model.add(Flatten(input_dim=states))
-    model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-    #model.add(Dense(8, activation='relu'))
-    model.add(Dense(4, activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(4, activation='softmax'))
 
     return model
 
@@ -51,8 +54,7 @@ def build_model(env):
 def build_agent(model, actions):
     policy = BoltzmannQPolicy()
     memory = SequentialMemory(limit=100000, window_length=1)
-    dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=100,
-                   target_model_update=1e-2)
+    dqn = CEMAgent(model=model, batch_size=50, memory=memory, nb_actions=actions, nb_steps_warmup=100)
     return dqn
 
 
@@ -61,6 +63,7 @@ env = TwentyFortyEightEnvironment()
 
 log_dir = "logs/scalars/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
+checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath='checkpoints/', save_best_only=True, save_freq=30000)
 
 states = env.observation_space.shape
 actions = env.action_space.n
@@ -69,7 +72,7 @@ model = build_model(env)
 model.summary()
 
 dqn = build_agent(model, actions)
-dqn.compile(Adam(lr=1e-3), metrics=['mae'])
+dqn.compile()
 
-dqn.fit(env, nb_steps=100000, visualize=False, verbose=1, callbacks=[tensorboard_callback])
+dqn.fit(env, nb_steps=5000000, visualize=False, verbose=1, callbacks=[tensorboard_callback, checkpointer])
 aux = dqn.test(env, 5, visualize=True)
