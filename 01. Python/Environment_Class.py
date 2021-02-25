@@ -32,7 +32,7 @@ class TwentyFortyEightEnvironment(Env):
         self.observation_space = Box(
             low=0,
             high=1,
-            shape=( 4, 4, 15),
+            shape= ( 4, 4, 15),
             dtype=int
         )
 
